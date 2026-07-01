@@ -63,51 +63,72 @@ function SearchPanel({ onSearch, loading }) {
     zip: '90210'
   };
 
-  return (
-    <div className="bg-white rounded-lg border shadow-sm p-4">
-      <h2 className="text-sm font-semibold text-slate-700 mb-3">Search Location</h2>
+  const modeIcons = {
+    address: '\ud83c\udfe0',
+    city: '\ud83c\udfd9\ufe0f',
+    zip: '\ud83d\udcee'
+  };
 
-      <div className="flex gap-1 mb-3">
+  return (
+    <div className="glass rounded-2xl p-4">
+      <h2 className="text-sm font-semibold text-white/70 mb-3 flex items-center gap-2">
+        <span>&#128269;</span> Search Location
+      </h2>
+
+      <div className="flex gap-1 mb-3 p-1 rounded-lg bg-white/5">
         {[
           { key: 'address', label: 'Address' },
           { key: 'city', label: 'City/State' },
-          { key: 'zip', label: 'ZIP Code' }
+          { key: 'zip', label: 'ZIP' }
         ].map((tab) => (
           <button
             key={tab.key}
             onClick={() => { setMode(tab.key); setQuery(''); setSuggestions([]); }}
-            className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-1.5 px-2 py-2 text-[11px] font-medium rounded-md transition-all ${
               mode === tab.key
-                ? 'bg-blue-600 text-white'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-500/25'
+                : 'text-white/40 hover:text-white/70 hover:bg-white/5'
             }`}
           >
+            <span className="text-xs">{modeIcons[tab.key]}</span>
             {tab.label}
           </button>
         ))}
       </div>
 
       <form onSubmit={handleSubmit} className="relative">
-        <input
-          type="text"
-          value={query}
-          onChange={handleInputChange}
-          onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-          onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-          placeholder={placeholders[mode]}
-          className="w-full px-3 py-2 text-sm border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          disabled={loading}
-        />
+        <div className="relative">
+          <input
+            type="text"
+            value={query}
+            onChange={handleInputChange}
+            onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+            placeholder={placeholders[mode]}
+            className="w-full px-4 py-3 text-sm bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/25 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-transparent transition-all"
+            disabled={loading}
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20">
+            {loading ? (
+              <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            )}
+          </div>
+        </div>
 
         {showSuggestions && suggestions.length > 0 && (
-          <ul className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-md shadow-lg max-h-48 overflow-y-auto">
+          <ul className="absolute z-50 w-full mt-2 glass rounded-xl shadow-2xl max-h-48 overflow-y-auto scrollbar-thin">
             {suggestions.map((s, i) => (
               <li
                 key={i}
                 onMouseDown={() => handleSuggestionClick(s)}
-                className="px-3 py-2 text-xs text-slate-700 hover:bg-blue-50 cursor-pointer border-b border-slate-100 last:border-0"
+                className="px-4 py-3 text-xs text-white/70 hover:bg-white/10 cursor-pointer border-b border-white/5 last:border-0 transition-colors flex items-center gap-2"
               >
-                {s.display_name}
+                <span className="text-blue-400/60">&#128205;</span>
+                <span className="truncate">{s.display_name}</span>
               </li>
             ))}
           </ul>
@@ -116,9 +137,9 @@ function SearchPanel({ onSearch, loading }) {
         <button
           type="submit"
           disabled={loading || !query.trim()}
-          className="w-full mt-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full mt-3 px-4 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white text-sm font-semibold rounded-xl hover:from-blue-600 hover:to-cyan-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 active:scale-[0.98]"
         >
-          {loading ? 'Searching...' : 'Search'}
+          {loading ? 'Analyzing...' : 'Analyze Weather'}
         </button>
       </form>
     </div>

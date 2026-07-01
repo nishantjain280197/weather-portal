@@ -6,6 +6,9 @@ import HistoricalChart from './components/HistoricalChart';
 import HourlyChart from './components/HourlyChart';
 import SearchHistory from './components/SearchHistory';
 import PdfExport from './components/PdfExport';
+import CurrentWeatherHero from './components/CurrentWeatherHero';
+import ForecastCards from './components/ForecastCards';
+import WeatherDetails from './components/WeatherDetails';
 
 const API_BASE = '/api';
 
@@ -17,6 +20,7 @@ function App() {
   const [searchHistory, setSearchHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [activeTab, setActiveTab] = useState('overview');
 
   const fetchSearchHistory = useCallback(async () => {
     try {
@@ -62,6 +66,7 @@ function App() {
       setCurrentWeather(weather);
       setAssessment(assess);
       setHistoricalData(historical);
+      setActiveTab('overview');
 
       await fetch(`${API_BASE}/searches`, {
         method: 'POST',
@@ -87,90 +92,174 @@ function App() {
     handleSearch(search.address, { lat: search.latitude, lon: search.longitude });
   };
 
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: '\ud83c\udf24\ufe0f' },
+    { id: 'forecast', label: '7-Day Forecast', icon: '\ud83d\udcc5' },
+    { id: 'perils', label: 'Risk Assessment', icon: '\u26a0\ufe0f' },
+    { id: 'history', label: 'Historical', icon: '\ud83d\udcca' },
+  ];
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+    <div className="min-h-screen text-white">
+      {/* Animated background */}
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl animate-pulse-glow" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: '1s' }} />
+        <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-cyan-500/5 rounded-full blur-3xl animate-pulse-glow" style={{ animationDelay: '2s' }} />
+      </div>
+
+      {/* Header */}
+      <header className="glass sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
-              </svg>
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+              <span className="text-xl">&#9729;&#65039;</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-800">Weather Peril Portal</h1>
-              <p className="text-xs text-slate-500">Insurance Risk Assessment Tool</p>
+              <h1 className="text-lg font-bold bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
+                Weather Peril Portal
+              </h1>
+              <p className="text-[10px] text-blue-300/60 font-medium tracking-wider uppercase">
+                Insurance Risk Intelligence
+              </p>
             </div>
           </div>
-          {location && (
-            <PdfExport
-              location={location}
-              assessment={assessment}
-              historicalData={historicalData}
-            />
-          )}
+          <div className="flex items-center gap-3">
+            {location && (
+              <PdfExport
+                location={location}
+                assessment={assessment}
+                historicalData={historicalData}
+              />
+            )}
+          </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-6">
         {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-            <strong>Error:</strong> {error}
+          <div className="mb-4 p-4 glass rounded-xl border border-red-500/30 text-red-300 animate-slide-up">
+            <div className="flex items-center gap-2">
+              <span>&#9888;&#65039;</span>
+              <strong>Error:</strong> {error}
+            </div>
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          <div className="lg:col-span-1 space-y-4">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Left Sidebar */}
+          <div className="lg:col-span-3 space-y-4">
             <SearchPanel onSearch={handleSearch} loading={loading} />
             <SearchHistory history={searchHistory} onSelect={handleHistoryClick} />
           </div>
 
-          <div className="lg:col-span-3 space-y-6">
+          {/* Main Content */}
+          <div className="lg:col-span-9 space-y-6">
             {loading && (
-              <div className="flex items-center justify-center h-64 bg-white rounded-lg border">
+              <div className="flex items-center justify-center h-80 glass rounded-2xl animate-slide-up">
                 <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-slate-600">Fetching weather data...</p>
+                  <div className="text-6xl animate-float mb-4">&#9729;&#65039;</div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" />
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                    <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                  </div>
+                  <p className="text-blue-300/70 mt-3 text-sm">Analyzing weather conditions...</p>
                 </div>
               </div>
             )}
 
             {location && !loading && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-white rounded-lg border shadow-sm overflow-hidden" style={{ height: '350px' }}>
-                    <WeatherMap lat={location.lat} lon={location.lon} assessment={assessment} />
-                  </div>
-                  <PerilAssessment assessment={assessment} />
+                {/* Hero Card */}
+                <CurrentWeatherHero
+                  location={location}
+                  currentWeather={currentWeather}
+                  assessment={assessment}
+                />
+
+                {/* Tab Navigation */}
+                <div className="glass rounded-xl p-1 flex gap-1">
+                  {tabs.map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                        activeTab === tab.id
+                          ? 'bg-gradient-to-r from-blue-500/30 to-cyan-500/30 text-white shadow-lg shadow-blue-500/10'
+                          : 'text-white/50 hover:text-white/80 hover:bg-white/5'
+                      }`}
+                    >
+                      <span>{tab.icon}</span>
+                      <span className="hidden sm:inline">{tab.label}</span>
+                    </button>
+                  ))}
                 </div>
 
-                {currentWeather?.hourly && (
-                  <HourlyChart hourlyData={currentWeather.hourly} />
-                )}
+                {/* Tab Content */}
+                <div className="animate-slide-up" key={activeTab}>
+                  {activeTab === 'overview' && (
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="glass rounded-2xl overflow-hidden" style={{ height: '350px' }}>
+                          <WeatherMap lat={location.lat} lon={location.lon} assessment={assessment} />
+                        </div>
+                        <WeatherDetails currentWeather={currentWeather} />
+                      </div>
+                      {currentWeather?.hourly && (
+                        <HourlyChart hourlyData={currentWeather.hourly} />
+                      )}
+                    </div>
+                  )}
 
-                {historicalData && (
-                  <HistoricalChart data={historicalData} />
-                )}
+                  {activeTab === 'forecast' && currentWeather?.daily && (
+                    <ForecastCards daily={currentWeather.daily} />
+                  )}
+
+                  {activeTab === 'perils' && (
+                    <PerilAssessment assessment={assessment} />
+                  )}
+
+                  {activeTab === 'history' && historicalData && (
+                    <HistoricalChart data={historicalData} />
+                  )}
+                </div>
               </>
             )}
 
             {!location && !loading && (
-              <div className="flex items-center justify-center h-64 bg-white rounded-lg border">
-                <div className="text-center text-slate-500">
-                  <svg className="w-16 h-16 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                  <p className="text-lg font-medium">Search for a location</p>
-                  <p className="text-sm">Enter a US address, city/state, or ZIP code to begin</p>
+              <div className="flex items-center justify-center h-96 glass rounded-2xl weather-glow">
+                <div className="text-center px-8">
+                  <div className="text-8xl mb-6 animate-float">&#127782;&#65039;</div>
+                  <h2 className="text-2xl font-bold bg-gradient-to-r from-white to-blue-300 bg-clip-text text-transparent mb-3">
+                    Weather Intelligence Hub
+                  </h2>
+                  <p className="text-blue-300/50 text-sm max-w-md mx-auto leading-relaxed">
+                    Enter a US address, city/state, or ZIP code to analyze weather perils,
+                    view 7-day forecasts, and assess insurance risk levels
+                  </p>
+                  <div className="flex items-center justify-center gap-6 mt-8 text-xs text-white/30">
+                    <span>&#127777;&#65039; Temperature</span>
+                    <span>&#128168; Wind</span>
+                    <span>&#127783;&#65039; Precipitation</span>
+                    <span>&#9889; Storms</span>
+                  </div>
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        <footer className="mt-8 pt-4 border-t border-slate-200 text-center text-xs text-slate-500">
-          Weather data provided by <a href="https://open-meteo.com/" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">Open-Meteo</a>.
-          Geocoding by <a href="https://www.openstreetmap.org/" className="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">OpenStreetMap Nominatim</a>.
+        <footer className="mt-10 pt-4 border-t border-white/5 text-center text-[11px] text-white/25">
+          Weather data by{' '}
+          <a href="https://open-meteo.com/" className="text-blue-400/50 hover:text-blue-400 transition-colors" target="_blank" rel="noopener noreferrer">
+            Open-Meteo
+          </a>
+          {' '}&bull;{' '}
+          Geocoding by{' '}
+          <a href="https://www.openstreetmap.org/" className="text-blue-400/50 hover:text-blue-400 transition-colors" target="_blank" rel="noopener noreferrer">
+            OpenStreetMap Nominatim
+          </a>
         </footer>
       </main>
     </div>
