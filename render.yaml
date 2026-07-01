@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: weather-peril-portal
+    runtime: node
+    plan: free
+    buildCommand: npm install && cd server && npm install && cd ../client && npm install && npm run build
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3001"
