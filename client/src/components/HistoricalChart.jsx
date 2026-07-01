@@ -1,78 +1,147 @@
-
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from 'recharts';
 
 function HistoricalChart({ data }) {
   if (!data || data.length === 0) return null;
 
-  const chartData = data.map((yearData) => {
-    const daily = yearData.data?.daily;
-    return {
-      year: yearData.year.toString(),
-      windMax: daily?.wind_speed_10m_max?.[0] || 0,
-      gustMax: daily?.wind_gusts_10m_max?.[0] || 0,
-      precipitation: daily?.precipitation_sum?.[0] || 0,
-      tempMax: daily?.temperature_2m_max?.[0] || 0,
-      tempMin: daily?.temperature_2m_min?.[0] || 0
-    };
-  }).reverse();
+  const windData = data.map(item => ({
+    year: item.year.toString(),
+    maxWind: item.data?.daily?.wind_speed_10m_max?.[0] || 0,
+    maxGust: item.data?.daily?.wind_gusts_10m_max?.[0] || 0,
+  }));
 
-  const avgWind = chartData.reduce((s, d) => s + d.windMax, 0) / chartData.length;
-  const currentWind = chartData[chartData.length - 1]?.windMax || 0;
-  const windAnomaly = avgWind > 0 ? (currentWind / avgWind).toFixed(1) : null;
+  const precipData = data.map(item => ({
+    year: item.year.toString(),
+    precipitation: item.data?.daily?.precipitation_sum?.[0] || 0,
+  }));
+
+  const tempData = data.map(item => ({
+    year: item.year,
+    high: item.data?.daily?.temperature_2m_max?.[0],
+    low: item.data?.daily?.temperature_2m_min?.[0],
+  }));
+
+  const currentWind = windData[0]?.maxWind || 0;
+  const avgWind = windData.reduce((sum, d) => sum + d.maxWind, 0) / windData.length;
+  const isAnomaly = currentWind > avgWind * 1.5;
+
+  const barColors = ['#3b82f6', '#06b6d4', '#8b5cf6'];
 
   return (
-    <div className="bg-white rounded-lg border shadow-sm p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold text-slate-700">3-Year Historical Comparison</h3>
-        {windAnomaly && parseFloat(windAnomaly) > 1.5 && (
-          <span className="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-700 rounded-full">
-            Wind {windAnomaly}x avg
-          </span>
-        )}
-      </div>
+    <div className="space-y-6 animate-slide-up">
+      {/* Anomaly Alert */}
+      {isAnomaly && (
+        <div className="glass rounded-xl p-4 border border-amber-500/20">
+          <div className="flex items-center gap-2 text-amber-400">
+            <span className="text-lg">&#9888;&#65039;</span>
+            <span className="text-sm font-semibold">Wind Anomaly Detected</span>
+          </div>
+          <p className="text-xs text-amber-300/60 mt-1 ml-7">
+            Recent max wind speed ({currentWind.toFixed(1)} mph) is {(currentWind / avgWind).toFixed(1)}x the 3-year average ({avgWind.toFixed(1)} mph)
+          </p>
+        </div>
+      )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <p className="text-xs text-slate-500 mb-2 font-medium">Max Wind Speed (mph)</p>
-          <div style={{ height: '200px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px' }} />
-                <Bar dataKey="windMax" fill="#3b82f6" name="Max Wind" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="gustMax" fill="#93c5fd" name="Max Gust" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+      <div className="glass rounded-2xl p-6">
+        <h3 className="text-lg font-semibold text-white/90 mb-6 flex items-center gap-2">
+          <span>&#128200;</span> 3-Year Historical Comparison
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Wind Chart */}
+          <div>
+            <h4 className="text-xs font-medium text-white/50 mb-3 flex items-center gap-1.5">
+              <span>&#128168;</span> Max Wind Speed (mph)
+            </h4>
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={windData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                  <XAxis
+                    dataKey="year"
+                    tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={{ stroke: 'rgba(255,255,255,0.06)' }}
+                  />
+                  <YAxis
+                    tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={35}
+                  />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Bar dataKey="maxWind" name="Max Wind" radius={[6, 6, 0, 0]}>
+                    {windData.map((_, i) => (
+                      <Cell key={i} fill={barColors[i]} fillOpacity={0.8} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Precipitation Chart */}
+          <div>
+            <h4 className="text-xs font-medium text-white/50 mb-3 flex items-center gap-1.5">
+              <span>&#127783;&#65039;</span> Precipitation (inches)
+            </h4>
+            <div className="h-48">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={precipData} margin={{ top: 5, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" />
+                  <XAxis
+                    dataKey="year"
+                    tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
+                    tickLine={false}
+                    axisLine={{ stroke: 'rgba(255,255,255,0.06)' }}
+                  />
+                  <YAxis
+                    tick={{ fill: 'rgba(255,255,255,0.3)', fontSize: 10 }}
+                    tickLine={false}
+                    axisLine={false}
+                    width={35}
+                  />
+                  <Tooltip content={<ChartTooltip />} />
+                  <Bar dataKey="precipitation" name="Precipitation" radius={[6, 6, 0, 0]}>
+                    {precipData.map((_, i) => (
+                      <Cell key={i} fill={['#06b6d4', '#0ea5e9', '#38bdf8'][i]} fillOpacity={0.8} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
-        <div>
-          <p className="text-xs text-slate-500 mb-2 font-medium">Precipitation (inches)</p>
-          <div style={{ height: '200px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
-                <XAxis dataKey="year" tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                <YAxis tick={{ fontSize: 11 }} stroke="#94a3b8" />
-                <Tooltip contentStyle={{ fontSize: '12px', borderRadius: '8px' }} />
-                <Bar dataKey="precipitation" fill="#06b6d4" name="Precipitation" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+        {/* Temperature Cards */}
+        <div className="grid grid-cols-3 gap-3 mt-6">
+          {tempData.map((d, i) => (
+            <div key={i} className="glass-light rounded-xl p-4 text-center">
+              <div className="text-xs text-white/40 mb-2">{d.year}</div>
+              <div className="text-lg font-bold text-white/90">
+                {d.high ? Math.round(d.high) : '--'}&deg;F
+              </div>
+              <div className="text-xs text-white/30">
+                / {d.low ? Math.round(d.low) : '--'}&deg;F
+              </div>
+              <div className="text-[9px] text-white/20 mt-1 uppercase tracking-wider">High / Low</div>
+            </div>
+          ))}
         </div>
       </div>
+    </div>
+  );
+}
 
-      <div className="mt-4 grid grid-cols-3 gap-3">
-        {chartData.map((d) => (
-          <div key={d.year} className="bg-slate-50 rounded-md p-3 text-center">
-            <p className="text-xs text-slate-500">{d.year}</p>
-            <p className="text-sm font-semibold text-slate-700">{d.tempMax.toFixed(0)}°F / {d.tempMin.toFixed(0)}°F</p>
-            <p className="text-xs text-slate-500">High / Low</p>
-          </div>
-        ))}
-      </div>
+function ChartTooltip({ active, payload, label }) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="glass rounded-lg px-3 py-2 shadow-xl text-xs">
+      <p className="text-white/60 mb-1 font-medium">{label}</p>
+      {payload.map((entry, i) => (
+        <p key={i} className="text-white/80" style={{ color: entry.fill || entry.color }}>
+          {entry.name}: <span className="font-semibold">{typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}</span>
+        </p>
+      ))}
     </div>
   );
 }
